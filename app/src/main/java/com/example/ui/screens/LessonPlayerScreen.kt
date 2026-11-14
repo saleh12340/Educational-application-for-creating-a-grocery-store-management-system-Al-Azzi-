@@ -1,0 +1,613 @@
+package com.example.ui.screens
+
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.NavigateBefore
+import androidx.compose.material.icons.automirrored.filled.NavigateNext
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
+import com.example.R
+import com.example.data.model.LessonItem
+import com.example.ui.components.AlAzziTopBar
+import com.example.ui.theme.AmberDebt
+import com.example.ui.theme.CrimsonDanger
+import com.example.ui.theme.DarkCardBorder
+import com.example.ui.theme.DarkCardElevated
+import com.example.ui.theme.DarkCardPrimary
+import com.example.ui.theme.DarkPlayerSurface
+import com.example.ui.theme.EmeraldBright
+import com.example.ui.theme.EmeraldPrimary
+import com.example.ui.theme.JetBrainsMonoFontFamily
+import com.example.ui.theme.PureWhite
+import com.example.ui.theme.SkyInfo
+import com.example.ui.theme.TextMutedOnDark
+import com.example.ui.theme.TextOnDark
+import com.example.util.ThermalPrinterHelper
+import kotlinx.coroutines.delay
+import java.util.Locale
+
+@Composable
+fun LessonPlayerScreen(
+    lesson: LessonItem,
+    totalLessons: Int,
+    onBack: () -> Unit,
+    onSelectLesson: (Int) -> Unit,
+    onToggleComplete: (Int, Boolean) -> Unit
+) {
+    val context = LocalContext.current
+    val hasNetwork = remember(lesson.id) { ThermalPrinterHelper.isNetworkConnected(context) }
+
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build()
+    }
+
+    var isPlaying by remember { mutableStateOf(false) }
+    var isBuffering by remember { mutableStateOf(true) }
+    var playerError by remember { mutableStateOf<String?>(null) }
+    var currentPositionMs by remember { mutableLongStateOf(0L) }
+    var durationMs by remember { mutableLongStateOf(0L) }
+    var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
+    var isUserScrubbing by remember { mutableStateOf(false) }
+    var scrubValueMs by remember { mutableFloatStateOf(0f) }
+
+    DisposableEffect(exoPlayer) {
+        val listener = object : Player.Listener {
+            override fun onIsPlayingChanged(playing: Boolean) {
+                isPlaying = playing
+            }
+
+            override fun onPlaybackStateChanged(state: Int) {
+                isBuffering = state == Player.STATE_BUFFERING
+                if (state == Player.STATE_READY) {
+                    durationMs = exoPlayer.duration.coerceAtLeast(0L)
+                    playerError = null
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                isBuffering = false
+                playerError = "تعذر تحميل بث الفيديو حالياً. يمكنك متابعة الشرح التطبيقي ونسخ الكود أدناه دون إنترنت."
+            }
+        }
+        exoPlayer.addListener(listener)
+        onDispose {
+            exoPlayer.removeListener(listener)
+            exoPlayer.release()
+        }
+    }
+
+    LaunchedEffect(lesson.id) {
+        playerError = null
+        isBuffering = true
+        currentPositionMs = 0L
+        durationMs = 0L
+        exoPlayer.setMediaItem(MediaItem.fromUri(lesson.videoUrl))
+        exoPlayer.prepare()
+        exoPlayer.playWhenReady = true
+    }
+
+    LaunchedEffect(isPlaying, isUserScrubbing) {
+        while (true) {
+            if (!isUserScrubbing) {
+                currentPositionMs = exoPlayer.currentPosition.coerceAtLeast(0L)
+                val d = exoPlayer.duration
+                if (d > 0L) durationMs = d
+            }
+            delay(250L)
+        }
+    }
+
+    Surface(
+        color = PureWhite,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+        ) {
+            AlAzziTopBar(
+                title = "الدرس ${lesson.id} من $totalLessons",
+                subtitle = lesson.durationLabel,
+                onBackClick = onBack,
+                actions = {
+                    Button(
+                        onClick = { onToggleComplete(lesson.id, !lesson.isCompleted) },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (lesson.isCompleted) EmeraldPrimary else DarkCardElevated,
+                            contentColor = TextOnDark
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                        modifier = Modifier
+                            .minimumInteractiveComponentSize()
+                            .testTag("toggle_lesson_complete_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = if (lesson.isCompleted) PureWhite else EmeraldBright,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = if (lesson.isCompleted) "مكتمل" else "إتمام",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Dark Opaque Video Player Container
+                Surface(
+                    color = DarkPlayerSurface,
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, DarkCardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(16f / 9f)
+                                .background(DarkPlayerSurface),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AndroidView(
+                                factory = { ctx ->
+                                    PlayerView(ctx).apply {
+                                        player = exoPlayer
+                                        useController = false
+                                        keepScreenOn = true
+                                    }
+                                },
+                                update = { view ->
+                                    if (view.player != exoPlayer) {
+                                        view.player = exoPlayer
+                                    }
+                                },
+                                modifier = Modifier.fillMaxSize()
+                            )
+
+                            if (!hasNetwork || playerError != null) {
+                                Surface(
+                                    color = DarkCardPrimary,
+                                    shape = RoundedCornerShape(12.dp),
+                                    border = BorderStroke(1.dp, AmberDebt),
+                                    modifier = Modifier.padding(16.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(14.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.WifiOff,
+                                            contentDescription = null,
+                                            tint = AmberDebt,
+                                            modifier = Modifier.size(28.dp)
+                                        )
+                                        Text(
+                                            text = playerError
+                                                ?: "لا يوجد اتصال بالإنترنت لبث الفيديو. الدليل العملي والكود متاحان بالأسفل.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextOnDark
+                                        )
+                                        Button(
+                                            onClick = {
+                                                playerError = null
+                                                exoPlayer.setMediaItem(MediaItem.fromUri(lesson.videoUrl))
+                                                exoPlayer.prepare()
+                                                exoPlayer.play()
+                                            },
+                                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
+                                            modifier = Modifier.minimumInteractiveComponentSize()
+                                        ) {
+                                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
+                                            Spacer(Modifier.width(6.dp))
+                                            Text("إعادة المحاولة")
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Interactive ExoPlayer Controls: Rewind, Play/Pause, Fast-forward, Timeline Scrubber, Speed
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(DarkCardPrimary)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            val totalFloat = durationMs.coerceAtLeast(1000L).toFloat()
+                            val sliderPos = if (isUserScrubbing) {
+                                scrubValueMs
+                            } else {
+                                currentPositionMs.toFloat().coerceIn(0f, totalFloat)
+                            }
+
+                            Slider(
+                                value = sliderPos,
+                                onValueChange = { newVal ->
+                                    isUserScrubbing = true
+                                    scrubValueMs = newVal
+                                },
+                                onValueChangeFinished = {
+                                    exoPlayer.seekTo(scrubValueMs.toLong())
+                                    currentPositionMs = scrubValueMs.toLong()
+                                    isUserScrubbing = false
+                                },
+                                valueRange = 0f..totalFloat,
+                                colors = SliderDefaults.colors(
+                                    thumbColor = EmeraldBright,
+                                    activeTrackColor = EmeraldBright,
+                                    inactiveTrackColor = DarkCardBorder
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("video_timeline_slider")
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "${formatDurationMs(currentPositionMs)} / ${formatDurationMs(durationMs)}",
+                                    fontFamily = JetBrainsMonoFontFamily,
+                                    fontSize = 12.sp,
+                                    color = TextMutedOnDark
+                                )
+                                Button(
+                                    onClick = {
+                                        val nextSpeed = when (playbackSpeed) {
+                                            1.0f -> 1.25f
+                                            1.25f -> 1.5f
+                                            1.5f -> 2.0f
+                                            else -> 1.0f
+                                        }
+                                        playbackSpeed = nextSpeed
+                                        exoPlayer.setPlaybackSpeed(nextSpeed)
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = DarkCardElevated,
+                                        contentColor = SkyInfo
+                                    ),
+                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    modifier = Modifier.minimumInteractiveComponentSize()
+                                ) {
+                                    Text(
+                                        text = "${playbackSpeed}x",
+                                        fontFamily = JetBrainsMonoFontFamily,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                            }
+
+                            // Playback Transport Controls (Rewind 10s, Play/Pause, Fast-Forward 10s)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                IconButton(
+                                    onClick = {
+                                        val target = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
+                                        exoPlayer.seekTo(target)
+                                        currentPositionMs = target
+                                    },
+                                    modifier = Modifier
+                                        .minimumInteractiveComponentSize()
+                                        .background(DarkCardElevated, CircleShape)
+                                        .testTag("video_rewind_button")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.FastRewind,
+                                        contentDescription = stringResource(R.string.cd_rewind),
+                                        tint = TextOnDark
+                                    )
+                                }
+
+                                Spacer(Modifier.width(20.dp))
+
+                                IconButton(
+                                    onClick = {
+                                        if (exoPlayer.isPlaying) {
+                                            exoPlayer.pause()
+                                        } else {
+                                            exoPlayer.play()
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .background(EmeraldPrimary, CircleShape)
+                                        .testTag("video_play_pause_button")
+                                ) {
+                                    Icon(
+                                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                        contentDescription = stringResource(R.string.cd_play_pause),
+                                        tint = PureWhite,
+                                        modifier = Modifier.size(30.dp)
+                                    )
+                                }
+
+                                Spacer(Modifier.width(20.dp))
+
+                                IconButton(
+                                    onClick = {
+                                        val maxPos = exoPlayer.duration.coerceAtLeast(0L)
+                                        val target = if (maxPos > 0L) {
+                                            (exoPlayer.currentPosition + 10_000L).coerceAtMost(maxPos)
+                                        } else {
+                                            exoPlayer.currentPosition + 10_000L
+                                        }
+                                        exoPlayer.seekTo(target)
+                                        currentPositionMs = target
+                                    },
+                                    modifier = Modifier
+                                        .minimumInteractiveComponentSize()
+                                        .background(DarkCardElevated, CircleShape)
+                                        .testTag("video_forward_button")
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.FastForward,
+                                        contentDescription = stringResource(R.string.cd_forward),
+                                        tint = TextOnDark
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Prev / Next Lesson Switcher
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = { if (lesson.id > 1) onSelectLesson(lesson.id - 1) },
+                        enabled = lesson.id > 1,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DarkCardPrimary,
+                            contentColor = TextOnDark
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .testTag("prev_lesson_button")
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.NavigateBefore, contentDescription = null)
+                        Text("الدرس السابق")
+                    }
+
+                    Button(
+                        onClick = { if (lesson.id < totalLessons) onSelectLesson(lesson.id + 1) },
+                        enabled = lesson.id < totalLessons,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = DarkCardPrimary,
+                            contentColor = TextOnDark
+                        ),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .minimumInteractiveComponentSize()
+                            .testTag("next_lesson_button")
+                    ) {
+                        Text("الدرس التالي")
+                        Icon(Icons.AutoMirrored.Filled.NavigateNext, contentDescription = null)
+                    }
+                }
+
+                // Lesson Details & Step-by-Step Guide (Dark Opaque Card)
+                Surface(
+                    color = DarkCardPrimary,
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, DarkCardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Text(
+                            text = lesson.title,
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = TextOnDark
+                            ),
+                            softWrap = true
+                        )
+                        Text(
+                            text = lesson.subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextMutedOnDark,
+                            softWrap = true
+                        )
+
+                        lesson.guideSteps.forEachIndexed { idx, step ->
+                            Row(
+                                verticalAlignment = Alignment.Top,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .background(EmeraldPrimary, RoundedCornerShape(6.dp))
+                                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                                ) {
+                                    Text(
+                                        text = "${idx + 1}",
+                                        fontFamily = JetBrainsMonoFontFamily,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        color = PureWhite
+                                    )
+                                }
+                                Text(
+                                    text = step,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = TextOnDark,
+                                    softWrap = true,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Copyable Code Template Card (Dark Opaque Card)
+                Surface(
+                    color = DarkCardPrimary,
+                    shape = RoundedCornerShape(14.dp),
+                    border = BorderStroke(1.dp, DarkCardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(14.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = lesson.fileLabel,
+                                fontFamily = JetBrainsMonoFontFamily,
+                                fontSize = 12.sp,
+                                color = SkyInfo,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Button(
+                                onClick = {
+                                    ThermalPrinterHelper.copyToClipboard(
+                                        context = context,
+                                        label = lesson.fileLabel,
+                                        text = lesson.codeSnippet
+                                    )
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.msg_copied),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = EmeraldPrimary,
+                                    contentColor = PureWhite
+                                ),
+                                contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .minimumInteractiveComponentSize()
+                                    .testTag("copy_lesson_code_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = stringResource(R.string.cd_copy_code),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(Modifier.width(6.dp))
+                                Text("نسخ الكود", style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(DarkPlayerSurface, RoundedCornerShape(10.dp))
+                                .padding(12.dp)
+                                .horizontalScroll(rememberScrollState())
+                        ) {
+                            Text(
+                                text = lesson.codeSnippet,
+                                fontFamily = JetBrainsMonoFontFamily,
+                                fontSize = 12.sp,
+                                lineHeight = 18.sp,
+                                color = EmeraldBright
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatDurationMs(ms: Long): String {
+    val totalSeconds = (ms / 1000L).coerceAtLeast(0L)
+    val minutes = totalSeconds / 60L
+    val seconds = totalSeconds % 60L
+    return String.format(Locale.US, "%02d:%02d", minutes, seconds)
+}
