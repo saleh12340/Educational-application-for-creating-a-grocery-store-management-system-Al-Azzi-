@@ -15,13 +15,13 @@ object LessonsCatalog {
             stepBoundariesMs = listOf(0L, 12416L, 25528L, 37512L),
             topics = listOf("تسجيل الدخول", "زر Build", "النسخة المجانية"),
             clickSteps = listOf(
-                "افتح المتصفح واذهب إلى موقع Google AI Studio (aistudio.google.com) ثم اضغط زر Sign In وسجّل دخولك بحساب Google العادي.",
-                "من القائمة الجانبية اليسرى اضغط على خيار Build (بناء التطبيقات)، ثم اختر Build an Android app لبدء مشروع جديد مجاناً بدون طلب أي بطاقة دفع.",
-                "اضغط داخل مربع الكتابة في أسفل أو وسط الصفحة واكتب فكرة تطبيقك باللغة العربية البسيطة دون كتابة أي رموز برمجية.",
-                "اضغط على زر الإرسال (السهم) وانتظر اكتمال التجهيز، ثم اضغط لاحقاً على أيقونة التصدير أو التحميل لحفظ مشروعك مجاناً."
+                "افتح متصفح Google Chrome. يمكنك كتابة aistudio.google.com مباشرة في شريط العنوان، أو فتح Google واختيار محرك البحث Google ثم كتابة Google AI Studio والضغط على النتيجة الرسمية.",
+                "بعد فتح الموقع اضغط Sign in وسجّل الدخول بحساب Google، ثم افتح Build من القائمة الجانبية واختر Android من محدد المنصة لبدء تطبيق أندرويد.",
+                "اضغط داخل مربع الطلب (Prompt)، واكتب وصف التطبيق الذي تريده بوضوح، مثل الاسم والوظائف واللغة العربية واتجاه RTL، ثم راجع طلبك قبل الإرسال.",
+                "اضغط Send أو زر السهم، وانتظر حتى ينشئ الوكيل المشروع وتظهر معاينة Android Emulator. لا تغلق الصفحة أثناء التوليد، ثم انتقل إلى الدرس التالي لربط GitHub."
             ),
             guideBoxTitle = "مسار الضغطات داخل الموقع (جاهز للنسخ)",
-            readyGuideText = "افتح aistudio.google.com ← اضغط Sign in ← من القائمة اليسرى اضغط Build ← اختر Android App ← اكتب وصف تطبيقك ← اضغط إرسال."
+            readyGuideText = "افتح Chrome ← اكتب aistudio.google.com أو ابحث عنه عبر Google ← Sign in ← Build ← اختر Android ← اكتب Prompt واضحاً ← Send ← انتظر معاينة Android Emulator."
         ),
         LessonItem(
             id = 2,
@@ -134,13 +134,13 @@ object LessonsCatalog {
             stepBoundariesMs = listOf(0L, 11720L, 24136L, 36432L),
             topics = listOf("حساب GitHub", "New Repository", "رفع المشروع"),
             clickSteps = listOf(
-                "افتح موقع github.com واضغط Sign up لإنشاء حساب مجاني ببريدك الإلكتروني وتأكيد الرمز.",
-                "بعد الدخول، اضغط على علامة (+) في أعلى الصفحة واختر New repository، ثم اكتب اسم المشروع واضغط Create repository.",
-                "في Google AI Studio، اضغط على أيقونة GitHub أو Export / Download ZIP في الشريط العلوي لنقل مشروعك إلى المستودع.",
-                "افتح صفحة المستودع على GitHub وتأكد من ظهور المجلدات والملفات على الفرع الرئيسي main."
+                "إذا لم يكن لديك حساب، افتح github.com واضغط Sign up وأنشئ حسابك وأكمل التحقق من البريد. احتفظ بتسجيل الدخول في المتصفح.",
+                "بعد اكتمال إنشاء التطبيق في Google AI Studio، افتح Settings (الإعدادات)، ثم مرّر إلى قسم GitHub أو افتح تبويب GitHub داخله.",
+                "اضغط Connect GitHub أو Link repository، وسجّل الدخول إذا طُلب منك ذلك، ثم وافق على صلاحيات الربط. اختر إنشاء مستودع جديد أو ربط مستودع موجود، وحدد المستودع والفرع الصحيح مثل main ثم أكمل الربط أو المزامنة.",
+                "ارجع إلى تبويب GitHub داخل AI Studio ونفّذ Push / Sync إذا ظهر، ثم افتح github.com وتأكد من وصول الملفات وظهور آخر commit على الفرع المحدد. إذا لم يظهر دعم ربط Android في حسابك، استخدم Download ZIP ثم ارفع الملفات إلى المستودع من GitHub كمسار بديل."
             ),
             guideBoxTitle = "خطوات الضغط في GitHub",
-            readyGuideText = "github.com ← Sign up ← علامة (+) ← New repository ← اكتب الاسم ← Create repository ← اربط أو ارفع ملفات المشروع."
+            readyGuideText = "أنشئ حساب GitHub إن لزم ← AI Studio: Settings ← GitHub ← Connect / Link repository ← وافق على الصلاحيات ← اختر المستودع والفرع ← Push / Sync ← تحقق من الملفات وآخر commit. إن لم يتوفر الربط لتطبيق Android استخدم Download ZIP ثم ارفع الملفات يدوياً."
         ),
         LessonItem(
             id = 9,
