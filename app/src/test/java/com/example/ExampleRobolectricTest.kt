@@ -23,5 +23,10 @@ class ExampleRobolectricTest {
     @Test
     fun `catalog contains exactly 10 Arabic voiced lessons`() {
         assertEquals(10, LessonsCatalog.lessons.size)
+        LessonsCatalog.lessons.forEach { lesson ->
+            assertEquals(4, lesson.clickSteps.size)
+            assertEquals(4, lesson.stepBoundariesMs.size)
+            assertEquals(0L, lesson.stepBoundariesMs.first())
+        }
     }
 }

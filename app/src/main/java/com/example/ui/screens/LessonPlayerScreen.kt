@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NavigateBefore
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
@@ -65,6 +66,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -111,6 +113,7 @@ fun LessonPlayerScreen(
 
     var isPlaying by remember { mutableStateOf(false) }
     var isMuted by remember { mutableStateOf(false) }
+    var showCaptions by remember { mutableStateOf(true) }
     var playerError by remember { mutableStateOf<String?>(null) }
     var currentPositionMs by remember { mutableLongStateOf(0L) }
     var durationMs by remember { mutableLongStateOf(30_000L) }
@@ -322,6 +325,33 @@ fun LessonPlayerScreen(
                                 }
                             }
 
+                            if (showCaptions && playerError == null) {
+                                val captionText = lesson.clickSteps.getOrElse(activeStepIndex) { "" }
+                                if (captionText.isNotEmpty()) {
+                                    Surface(
+                                        color = DarkCardPrimary,
+                                        shape = RoundedCornerShape(8.dp),
+                                        border = BorderStroke(1.dp, DarkCardBorder),
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .padding(horizontal = 10.dp, vertical = 8.dp)
+                                            .testTag("video_arabic_subtitle")
+                                    ) {
+                                        Text(
+                                            text = captionText,
+                                            style = MaterialTheme.typography.labelMedium.copy(
+                                                fontWeight = FontWeight.SemiBold,
+                                                lineHeight = 18.sp
+                                            ),
+                                            color = PureWhite,
+                                            textAlign = TextAlign.Center,
+                                            softWrap = true,
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                }
+                            }
+
                             playerError?.let { errMsg ->
                                 Surface(
                                     color = DarkCardPrimary,
@@ -419,6 +449,21 @@ fun LessonPlayerScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
+                                    IconButton(
+                                        onClick = { showCaptions = !showCaptions },
+                                        modifier = Modifier
+                                            .minimumInteractiveComponentSize()
+                                            .background(DarkCardElevated, RoundedCornerShape(8.dp))
+                                            .testTag("video_captions_button")
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ClosedCaption,
+                                            contentDescription = stringResource(R.string.cd_captions),
+                                            tint = if (showCaptions) EmeraldBright else TextMutedOnDark,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+
                                     IconButton(
                                         onClick = {
                                             isMuted = !isMuted
@@ -619,11 +664,18 @@ fun LessonPlayerScreen(
 
                         lesson.clickSteps.forEachIndexed { idx, step ->
                             val isCurrentStep = idx == activeStepIndex
+                            val stepStartMs = lesson.stepBoundariesMs.getOrElse(idx) { 0L }
                             Surface(
+                                onClick = {
+                                    exoPlayer.seekTo(stepStartMs)
+                                    currentPositionMs = stepStartMs
+                                },
                                 color = if (isCurrentStep) DarkCardElevated else DarkCardPrimary,
                                 shape = RoundedCornerShape(10.dp),
                                 border = if (isCurrentStep) BorderStroke(1.dp, EmeraldBright) else null,
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .testTag("lesson_step_card_$idx")
                             ) {
                                 Row(
                                     modifier = Modifier.padding(10.dp),

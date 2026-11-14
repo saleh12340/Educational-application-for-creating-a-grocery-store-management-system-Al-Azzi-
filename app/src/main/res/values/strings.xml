@@ -8,6 +8,7 @@
     <string name="cd_rewind">تأخير 5 ثوانٍ</string>
     <string name="cd_forward">تقديم 5 ثوانٍ</string>
     <string name="cd_mute">كتم أو تشغيل الصوت</string>
+    <string name="cd_captions">إظهار أو إخفاء الترجمة العربية</string>
     <string name="cd_copy_text">نسخ النص</string>
     <string name="msg_copied">تم النسخ إلى الحافظة</string>
 </resources>
