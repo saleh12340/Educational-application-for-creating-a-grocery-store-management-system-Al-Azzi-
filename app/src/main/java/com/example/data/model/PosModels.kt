@@ -39,7 +39,7 @@ data class LessonItem(
     val title: String,
     val subtitle: String,
     val durationLabel: String,
-    val videoUrl: String,
+    val rawResId: Int,
     val topics: List<String>,
     val guideSteps: List<String>,
     val fileLabel: String,

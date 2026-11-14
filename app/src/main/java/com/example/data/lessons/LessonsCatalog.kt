@@ -1,5 +1,6 @@
 package com.example.data.lessons
 
+import com.example.R
 import com.example.data.model.LessonItem
 
 object LessonsCatalog {
@@ -73,8 +74,8 @@ jobs:
             id = 1,
             title = "الدرس الأول: التعامل مع النسخة المجانية بالكامل من Google AI Studio وضبط الإعدادات",
             subtitle = "تهيئة بيئة التطوير السحابية مجاناً بدون بطاقة بنكية وكتابة البرومبت الهندسي الدقيق",
-            durationLabel = "11:20",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_01,
             topics = listOf("AI Studio Free Tier", "تصدير ZIP", "ربط GitHub"),
             guideSteps = listOf(
                 "افتح Google AI Studio Build بحساب Google المجاني واختر قالب تطبيق أندرويد أصلي.",
@@ -96,8 +97,8 @@ jobs:
             id = 2,
             title = "الدرس الثاني: تصميم الهيكل الأساسي لمشروع الأندرويد وتحديد متطلبات Java 17 و SDK 35",
             subtitle = "إعداد ملفات Gradle والمستودع وهيكلة الحزم والمكتبات الأساسية بدقة",
-            durationLabel = "14:05",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_02,
             topics = listOf("SDK 35/36", "Java 17", "Gradle KTS", "Media3"),
             guideSteps = listOf(
                 "تأكد من ضبط compileSdk و targetSdk مع توافق Java 17 في إعدادات Gradle وبيئة البناء.",
@@ -136,8 +137,8 @@ dependencies {
             id = 3,
             title = "الدرس الثالث: بناء واجهات المستخدم المخصصة لإدارة المتاجر (البطاقات الداكنة والخلفيات البيضاء)",
             subtitle = "تطبيق نظام الألوان عالي التباين وتثبيت الإدخالات في أعلى الشاشة للهواتف",
-            durationLabel = "13:45",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_03,
             topics = listOf("خلفية بيضاء", "بطاقات داكنة عاتمة", "حماية الكيبورد"),
             guideSteps = listOf(
                 "اضبط خلفية جميع الشاشات على اللون الأبيض النقي #FFFFFF بدون أي شفافية زجاجية (No Glassmorphism).",
@@ -181,8 +182,8 @@ Surface(
             id = 4,
             title = "الدرس الرابع: إدارة قواعد البيانات المحلية (SQLite) لتخزين بيانات الزبائن والفواتير محلياً مجاناً",
             subtitle = "تصميم الجداول والعلاقات والحفظ الآمن دون الحاجة لخوادم أو اشتراكات شهرية",
-            durationLabel = "16:10",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoy.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_04,
             topics = listOf("SQLite", "Room DAO", "Cascade Delete", "تصدير JSON"),
             guideSteps = listOf(
                 "أنشئ جدول customers لحفظ الاسم الكامل والهاتف وجدول transactions لحفظ الديون والسداد مع ForeignKey.",
@@ -216,8 +217,8 @@ data class TransactionEntity(
             id = 5,
             title = "الدرس الخامس: برمجة شاشة سجل العمليات وتصميم الجداول العريضة للرصيد التراكمي",
             subtitle = "حساب الرصيد التراكمي بدقة لكل صف وعرض الأعمدة الخمسة بعرض الشاشة الكامل",
-            durationLabel = "15:00",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_05,
             topics = listOf("جدول عريض", "الرصيد التراكمي", "التاريخ والوقت"),
             guideSteps = listOf(
                 "رتب عمليات العميل تصاعدياً حسب الوقت (timestamp ASC) لحساب الرصيد التراكمي من أول عملية حتى آخر عملية.",
@@ -254,8 +255,8 @@ fun computeLedgerRows(transactionsAsc: List<TransactionEntity>): List<LedgerRow>
             id = 6,
             title = "الدرس السادس: تطبيق تفاعلات اللمس المتقدمة (Long-press وتوجيهات التنقل العلوي)",
             subtitle = "برمجة الضغط المطول لخيارات التعديل والحذف وسهم الرجوع العلوي بدون شريط سفلي",
-            durationLabel = "12:30",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_06,
             topics = listOf("Long-press", "HapticFeedback", "سهم الرجوع العلوي"),
             guideSteps = listOf(
                 "استبدل أزرار التعديل والحذف المزدحمة في صفوف الجدول بتفاعل الضغط المطول combinedClickable.",
@@ -285,8 +286,8 @@ Row(
             id = 7,
             title = "الدرس السابع: ربط التطبيق بخيارات الطباعة الحرارية وفواتير الاستلام",
             subtitle = "توليد فاتورة حرارية متناسقة 58mm/80mm والطباعة عبر Android PrintManager أو البلوتوث",
-            durationLabel = "14:50",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_07,
             topics = listOf("طباعة حرارية", "PrintManager", "مشاركة نصية"),
             guideSteps = listOf(
                 "صمم نموذج فاتورة حرارية يحمل ترويسة (بقالة العزي للمواد الغذائية) واسم العميل الكامل والتاريخ والمبلغ والرصيد التراكمي.",
@@ -313,8 +314,8 @@ fun printThermalHtml(context: Context, jobName: String, htmlContent: String) {
             id = 8,
             title = "الدرس الثامن: إعداد وربط مستودع GitHub وتكوين نظام النسخة البرمجية المجاني",
             subtitle = "رفع ملفات المشروع من الهاتف عبر Acode و Git والاحتفاظ بسجل التغييرات مجاناً",
-            durationLabel = "10:55",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_08,
             topics = listOf("GitHub Free", "Acode", "Git Push", ".gitignore"),
             guideSteps = listOf(
                 "أنشئ مستودعاً جديداً مجانياً على GitHub (عام أو خاص — كلاهما يدعم GitHub Actions مجاناً).",
@@ -336,8 +337,8 @@ git push -u origin main
             id = 9,
             title = "الدرس التاسع: بناء وتهيئة ملفات GitHub Actions الآلية لتجميع وضبط ملفات الـ APK مجاناً",
             subtitle = "كتابة ملف .github/workflows/build.yml لاستخراج ملف app-debug.apk جاهز للتحميل",
-            durationLabel = "15:30",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_09,
             topics = listOf("GitHub Actions", "Java 17", "assembleDebug", "Artifacts"),
             guideSteps = listOf(
                 "أنشئ المسار .github/workflows/build.yml داخل جذر المستودع.",
@@ -352,8 +353,8 @@ git push -u origin main
             id = 10,
             title = "الدرس العاشر: اختبار التطبيق نهائياً، اكتشاف الأخطاء، وحل مشاكل التوافقية على الهواتف",
             subtitle = "فحص شاشات الهاتف، تجنب تداخل الكيبورد، واختبارات Robolectric قبل التثبيت النهائي",
-            durationLabel = "13:15",
-            videoUrl = "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+            durationLabel = "00:32",
+            rawResId = R.raw.lesson_10,
             topics = listOf("اختبار الواجهة", "RTL", "ExoPlayer Lifecycle", "APK Verification"),
             guideSteps = listOf(
                 "تحقق من تحرير موارد ExoPlayer داخل DisposableEffect(onDispose) لمنع استنزاف الذاكرة عند الرجوع.",

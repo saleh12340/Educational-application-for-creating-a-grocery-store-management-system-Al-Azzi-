@@ -1,6 +1,7 @@
 package com.example.ui.screens
 
 import android.widget.Toast
+import androidx.annotation.OptIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,12 +30,13 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -63,13 +66,14 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.RawResourceDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.example.R
 import com.example.data.model.LessonItem
 import com.example.ui.components.AlAzziTopBar
 import com.example.ui.theme.AmberDebt
-import com.example.ui.theme.CrimsonDanger
 import com.example.ui.theme.DarkCardBorder
 import com.example.ui.theme.DarkCardElevated
 import com.example.ui.theme.DarkCardPrimary
@@ -85,6 +89,8 @@ import com.example.util.ThermalPrinterHelper
 import kotlinx.coroutines.delay
 import java.util.Locale
 
+@kotlin.OptIn(ExperimentalMaterial3Api::class)
+@OptIn(UnstableApi::class)
 @Composable
 fun LessonPlayerScreen(
     lesson: LessonItem,
@@ -94,17 +100,15 @@ fun LessonPlayerScreen(
     onToggleComplete: (Int, Boolean) -> Unit
 ) {
     val context = LocalContext.current
-    val hasNetwork = remember(lesson.id) { ThermalPrinterHelper.isNetworkConnected(context) }
 
     val exoPlayer = remember {
         ExoPlayer.Builder(context).build()
     }
 
     var isPlaying by remember { mutableStateOf(false) }
-    var isBuffering by remember { mutableStateOf(true) }
     var playerError by remember { mutableStateOf<String?>(null) }
     var currentPositionMs by remember { mutableLongStateOf(0L) }
-    var durationMs by remember { mutableLongStateOf(0L) }
+    var durationMs by remember { mutableLongStateOf(32_000L) }
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
     var isUserScrubbing by remember { mutableStateOf(false) }
     var scrubValueMs by remember { mutableFloatStateOf(0f) }
@@ -116,16 +120,15 @@ fun LessonPlayerScreen(
             }
 
             override fun onPlaybackStateChanged(state: Int) {
-                isBuffering = state == Player.STATE_BUFFERING
                 if (state == Player.STATE_READY) {
-                    durationMs = exoPlayer.duration.coerceAtLeast(0L)
+                    val d = exoPlayer.duration
+                    if (d > 0L) durationMs = d
                     playerError = null
                 }
             }
 
             override fun onPlayerError(error: PlaybackException) {
-                isBuffering = false
-                playerError = "تعذر تحميل بث الفيديو حالياً. يمكنك متابعة الشرح التطبيقي ونسخ الكود أدناه دون إنترنت."
+                playerError = "تعذر تشغيل ملف الفيديو المحلي."
             }
         }
         exoPlayer.addListener(listener)
@@ -137,10 +140,10 @@ fun LessonPlayerScreen(
 
     LaunchedEffect(lesson.id) {
         playerError = null
-        isBuffering = true
         currentPositionMs = 0L
-        durationMs = 0L
-        exoPlayer.setMediaItem(MediaItem.fromUri(lesson.videoUrl))
+        durationMs = 32_000L
+        val rawUri = RawResourceDataSource.buildRawResourceUri(lesson.rawResId)
+        exoPlayer.setMediaItem(MediaItem.fromUri(rawUri))
         exoPlayer.prepare()
         exoPlayer.playWhenReady = true
     }
@@ -152,9 +155,11 @@ fun LessonPlayerScreen(
                 val d = exoPlayer.duration
                 if (d > 0L) durationMs = d
             }
-            delay(250L)
+            delay(200L)
         }
     }
+
+    val activeStepIndex = ((currentPositionMs / 8_000L).toInt()).coerceIn(0, 3)
 
     Surface(
         color = PureWhite,
@@ -167,7 +172,7 @@ fun LessonPlayerScreen(
         ) {
             AlAzziTopBar(
                 title = "الدرس ${lesson.id} من $totalLessons",
-                subtitle = lesson.durationLabel,
+                subtitle = "${lesson.durationLabel} • يعمل بدون إنترنت",
                 onBackClick = onBack,
                 actions = {
                     Button(
@@ -204,7 +209,7 @@ fun LessonPlayerScreen(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Dark Opaque Video Player Container
+                // Dark Opaque Offline Video Player Container
                 Surface(
                     color = DarkPlayerSurface,
                     shape = RoundedCornerShape(16.dp),
@@ -235,7 +240,35 @@ fun LessonPlayerScreen(
                                 modifier = Modifier.fillMaxSize()
                             )
 
-                            if (!hasNetwork || playerError != null) {
+                            // Offline Ready Badge
+                            Surface(
+                                color = DarkCardPrimary,
+                                shape = RoundedCornerShape(8.dp),
+                                border = BorderStroke(1.dp, EmeraldPrimary),
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.OfflinePin,
+                                        contentDescription = null,
+                                        tint = EmeraldBright,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                    Text(
+                                        text = "تشغيل محلي بدون نت",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TextOnDark
+                                    )
+                                }
+                            }
+
+                            playerError?.let { errMsg ->
                                 Surface(
                                     color = DarkCardPrimary,
                                     shape = RoundedCornerShape(12.dp),
@@ -247,31 +280,24 @@ fun LessonPlayerScreen(
                                         horizontalAlignment = Alignment.CenterHorizontally,
                                         verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.WifiOff,
-                                            contentDescription = null,
-                                            tint = AmberDebt,
-                                            modifier = Modifier.size(28.dp)
-                                        )
                                         Text(
-                                            text = playerError
-                                                ?: "لا يوجد اتصال بالإنترنت لبث الفيديو. الدليل العملي والكود متاحان بالأسفل.",
+                                            text = errMsg,
                                             style = MaterialTheme.typography.bodySmall,
                                             color = TextOnDark
                                         )
                                         Button(
                                             onClick = {
                                                 playerError = null
-                                                exoPlayer.setMediaItem(MediaItem.fromUri(lesson.videoUrl))
+                                                val rawUri = RawResourceDataSource.buildRawResourceUri(lesson.rawResId)
+                                                exoPlayer.setMediaItem(MediaItem.fromUri(rawUri))
                                                 exoPlayer.prepare()
                                                 exoPlayer.play()
                                             },
-                                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary),
-                                            modifier = Modifier.minimumInteractiveComponentSize()
+                                            colors = ButtonDefaults.buttonColors(containerColor = EmeraldPrimary)
                                         ) {
                                             Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                             Spacer(Modifier.width(6.dp))
-                                            Text("إعادة المحاولة")
+                                            Text("إعادة التشغيل")
                                         }
                                     }
                                 }
@@ -305,6 +331,13 @@ fun LessonPlayerScreen(
                                     isUserScrubbing = false
                                 },
                                 valueRange = 0f..totalFloat,
+                                thumb = {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(18.dp)
+                                            .background(EmeraldBright, CircleShape)
+                                    )
+                                },
                                 colors = SliderDefaults.colors(
                                     thumbColor = EmeraldBright,
                                     activeTrackColor = EmeraldBright,
@@ -312,6 +345,7 @@ fun LessonPlayerScreen(
                                 ),
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .height(32.dp)
                                     .testTag("video_timeline_slider")
                             )
 
@@ -353,7 +387,7 @@ fun LessonPlayerScreen(
                                 }
                             }
 
-                            // Playback Transport Controls (Rewind 10s, Play/Pause, Fast-Forward 10s)
+                            // Playback Transport Controls (Rewind 5s/10s, Play/Pause, Fast-Forward 5s/10s)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -363,7 +397,7 @@ fun LessonPlayerScreen(
                             ) {
                                 IconButton(
                                     onClick = {
-                                        val target = (exoPlayer.currentPosition - 10_000L).coerceAtLeast(0L)
+                                        val target = (exoPlayer.currentPosition - 8_000L).coerceAtLeast(0L)
                                         exoPlayer.seekTo(target)
                                         currentPositionMs = target
                                     },
@@ -383,7 +417,10 @@ fun LessonPlayerScreen(
 
                                 IconButton(
                                     onClick = {
-                                        if (exoPlayer.isPlaying) {
+                                        if (exoPlayer.playbackState == Player.STATE_ENDED) {
+                                            exoPlayer.seekTo(0L)
+                                            exoPlayer.play()
+                                        } else if (exoPlayer.isPlaying) {
                                             exoPlayer.pause()
                                         } else {
                                             exoPlayer.play()
@@ -406,12 +443,8 @@ fun LessonPlayerScreen(
 
                                 IconButton(
                                     onClick = {
-                                        val maxPos = exoPlayer.duration.coerceAtLeast(0L)
-                                        val target = if (maxPos > 0L) {
-                                            (exoPlayer.currentPosition + 10_000L).coerceAtMost(maxPos)
-                                        } else {
-                                            exoPlayer.currentPosition + 10_000L
-                                        }
+                                        val maxPos = exoPlayer.duration.coerceAtLeast(durationMs)
+                                        val target = (exoPlayer.currentPosition + 8_000L).coerceAtMost(maxPos)
                                         exoPlayer.seekTo(target)
                                         currentPositionMs = target
                                     },
@@ -471,7 +504,7 @@ fun LessonPlayerScreen(
                     }
                 }
 
-                // Lesson Details & Step-by-Step Guide (Dark Opaque Card)
+                // Synced Arabic Lesson Guide (Highlights active step as video plays!)
                 Surface(
                     color = DarkCardPrimary,
                     shape = RoundedCornerShape(14.dp),
@@ -498,30 +531,42 @@ fun LessonPlayerScreen(
                         )
 
                         lesson.guideSteps.forEachIndexed { idx, step ->
-                            Row(
-                                verticalAlignment = Alignment.Top,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            val isCurrentStep = idx == activeStepIndex
+                            Surface(
+                                color = if (isCurrentStep) DarkCardElevated else DarkCardPrimary,
+                                shape = RoundedCornerShape(10.dp),
+                                border = if (isCurrentStep) BorderStroke(1.dp, EmeraldBright) else null,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .background(EmeraldPrimary, RoundedCornerShape(6.dp))
-                                        .padding(horizontal = 7.dp, vertical = 2.dp)
+                                Row(
+                                    modifier = Modifier.padding(8.dp),
+                                    verticalAlignment = Alignment.Top,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .background(
+                                                if (isCurrentStep) EmeraldBright else EmeraldPrimary,
+                                                RoundedCornerShape(6.dp)
+                                            )
+                                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                                    ) {
+                                        Text(
+                                            text = "${idx + 1}",
+                                            fontFamily = JetBrainsMonoFontFamily,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 11.sp,
+                                            color = if (isCurrentStep) DarkCardPrimary else PureWhite
+                                        )
+                                    }
                                     Text(
-                                        text = "${idx + 1}",
-                                        fontFamily = JetBrainsMonoFontFamily,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                        color = PureWhite
+                                        text = step,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = TextOnDark,
+                                        softWrap = true,
+                                        modifier = Modifier.weight(1f)
                                     )
                                 }
-                                Text(
-                                    text = step,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = TextOnDark,
-                                    softWrap = true,
-                                    modifier = Modifier.weight(1f)
-                                )
                             }
                         }
                     }
