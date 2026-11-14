@@ -253,6 +253,48 @@ fun LessonPlayerScreen(
                                 modifier = Modifier.fillMaxSize()
                             )
 
+                            // Synchronized on-video coaching caption: follows the current narration step.
+                            Surface(
+                                color = DarkCardPrimary.copy(alpha = 0.96f),
+                                shape = RoundedCornerShape(10.dp),
+                                border = BorderStroke(1.dp, EmeraldBright),
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 10.dp, vertical = 9.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.TouchApp,
+                                        contentDescription = "موضع الإجراء",
+                                        tint = EmeraldBright,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                    Column(
+                                        modifier = Modifier.weight(1f),
+                                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        Text(
+                                            text = "الخطوة ${activeStepIndex + 1} من ${lesson.clickSteps.size} • اتبع الضغطات",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = EmeraldBright,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                        Text(
+                                            text = lesson.clickSteps.getOrNull(activeStepIndex)
+                                                ?: "تابع الشرح المرئي خطوة بخطوة.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = TextOnDark,
+                                            softWrap = true
+                                        )
+                                    }
+                                }
+                            }
+
                             Surface(
                                 color = DarkCardPrimary,
                                 shape = RoundedCornerShape(8.dp),
