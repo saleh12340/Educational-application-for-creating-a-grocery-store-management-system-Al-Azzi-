@@ -1,6 +1,5 @@
 package com.example.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,14 +31,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.R
-import com.example.data.model.formatNumericOnly
-import com.example.ui.theme.AmberDebt
-import com.example.ui.theme.CrimsonDanger
-import com.example.ui.theme.DarkCardBorder
 import com.example.ui.theme.DarkCardElevated
 import com.example.ui.theme.DarkCardPrimary
 import com.example.ui.theme.EmeraldBright
@@ -114,78 +107,26 @@ fun AlAzziTopBar(
     }
 }
 
-/**
- * Compact balance box displaying ONLY the numeric value, as requested.
- */
 @Composable
-fun NumericBalanceBox(
-    balance: Double,
-    modifier: Modifier = Modifier,
-    containerColor: Color = DarkCardElevated
+fun NumericCounterBox(
+    text: String,
+    modifier: Modifier = Modifier
 ) {
-    val textColor = when {
-        balance > 0.0 -> AmberDebt
-        balance < 0.0 -> CrimsonDanger
-        else -> EmeraldBright
-    }
-    val borderColor = when {
-        balance > 0.0 -> AmberDebt
-        balance < 0.0 -> CrimsonDanger
-        else -> EmeraldBright
-    }
-
     Box(
         modifier = modifier
-            .background(containerColor, RoundedCornerShape(10.dp))
-            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+            .background(DarkCardElevated, RoundedCornerShape(10.dp))
+            .border(1.dp, EmeraldBright, RoundedCornerShape(10.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = formatNumericOnly(balance),
+            text = text,
             fontFamily = JetBrainsMonoFontFamily,
             fontWeight = FontWeight.Bold,
-            fontSize = 15.sp,
-            color = textColor,
-            textAlign = TextAlign.Center,
+            fontSize = 14.sp,
+            color = EmeraldBright,
             maxLines = 1
         )
-    }
-}
-
-@Composable
-fun SummaryMetricCard(
-    label: String,
-    numericValue: String,
-    accentColor: Color,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        color = DarkCardPrimary,
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(1.dp, DarkCardBorder),
-        modifier = modifier
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = TextMutedOnDark,
-                maxLines = 1
-            )
-            Text(
-                text = numericValue,
-                fontFamily = JetBrainsMonoFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 15.sp,
-                color = accentColor,
-                maxLines = 1,
-                modifier = Modifier.padding(top = 4.dp)
-            )
-        }
     }
 }
 

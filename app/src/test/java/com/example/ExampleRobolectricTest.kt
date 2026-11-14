@@ -3,7 +3,6 @@ package com.example
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.lessons.LessonsCatalog
-import com.example.data.model.formatNumericOnly
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,9 +21,7 @@ class ExampleRobolectricTest {
     }
 
     @Test
-    fun `catalog contains exactly 10 Arabic lessons`() {
+    fun `catalog contains exactly 10 Arabic voiced lessons`() {
         assertEquals(10, LessonsCatalog.lessons.size)
-        assertEquals("850", formatNumericOnly(850.0))
-        assertEquals("850.50", formatNumericOnly(850.5))
     }
 }

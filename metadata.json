@@ -1,6 +1,6 @@
 {
   "name": "دليل بقالة العزي",
-  "description": "تطبيق دليل ومطور بقالة العزي: نظام إدارة مبيعات ودفتر ديون محلي (SQLite) مع 10 دروس فيديو عربية لتطوير تطبيقات أندرويد مجاناً عبر Google AI Studio و GitHub Actions.",
+  "description": "دليل فيديو صوتي باللغة العربية يضم 10 دروس عملية بدون إنترنت تشرح خطوة بخطوة كيفية التعامل مع موقع Google AI Studio المجاني وموقع GitHub لبناء تطبيقات الأندرويد بالضغطات دون كتابة أي كود.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

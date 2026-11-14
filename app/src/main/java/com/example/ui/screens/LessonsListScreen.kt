@@ -1,8 +1,9 @@
 package com.example.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,22 +11,20 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -37,6 +36,8 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +47,7 @@ import com.example.R
 import com.example.data.model.LessonItem
 import com.example.ui.components.AlAzziTopBar
 import com.example.ui.components.CrispWhiteTextField
+import com.example.ui.components.NumericCounterBox
 import com.example.ui.theme.DarkCardBorder
 import com.example.ui.theme.DarkCardElevated
 import com.example.ui.theme.DarkCardPrimary
@@ -60,7 +62,7 @@ import com.example.ui.theme.TextOnDark
 import com.example.ui.viewmodel.LessonFilter
 import java.util.Locale
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun LessonsListScreen(
     lessons: List<LessonItem>,
@@ -71,10 +73,10 @@ fun LessonsListScreen(
     onSearchQueryChange: (String) -> Unit,
     onFilterChange: (LessonFilter) -> Unit,
     onToggleComplete: (Int, Boolean) -> Unit,
-    onOpenLesson: (Int) -> Unit,
-    onOpenGitHubWorkflow: () -> Unit,
-    onBack: () -> Unit
+    onOpenLesson: (Int) -> Unit
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Surface(
         color = PureWhite,
         modifier = Modifier.fillMaxSize()
@@ -85,39 +87,14 @@ fun LessonsListScreen(
                 .navigationBarsPadding()
         ) {
             AlAzziTopBar(
-                title = stringResource(R.string.lessons_screen_title),
-                subtitle = "المكتمل: $completedCount / $totalCount • مجاني بالكامل",
-                onBackClick = onBack,
+                title = stringResource(R.string.app_name),
+                subtitle = "10 دروس فيديو بالصوت والضغطات • بدون نت",
                 actions = {
-                    Button(
-                        onClick = onOpenGitHubWorkflow,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = DarkCardElevated,
-                            contentColor = TextOnDark
-                        ),
-                        border = BorderStroke(1.dp, DarkCardBorder),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                        modifier = Modifier
-                            .minimumInteractiveComponentSize()
-                            .testTag("nav_github_button")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Code,
-                            contentDescription = null,
-                            tint = SkyInfo,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = stringResource(R.string.nav_github_actions),
-                            style = MaterialTheme.typography.labelMedium
-                        )
-                    }
+                    NumericCounterBox(text = "$completedCount/$totalCount")
                 }
             )
 
-            // Top-pinned Search & Filter Card
+            // Top-pinned Search & Filter Card (Always visible above keyboard)
             Surface(
                 color = DarkCardPrimary,
                 shape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp),
@@ -156,7 +133,7 @@ fun LessonsListScreen(
                             modifier = Modifier.weight(1f)
                         )
                         FilterPillButton(
-                            label = "قيد التعلم",
+                            label = "قيد المشاهدة",
                             selected = activeFilter == LessonFilter.INCOMPLETE,
                             onClick = { onFilterChange(LessonFilter.INCOMPLETE) },
                             modifier = Modifier.weight(1f)
@@ -186,7 +163,13 @@ fun LessonsListScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onOpenLesson(lesson.id) }
+                            .combinedClickable(
+                                onClick = { onOpenLesson(lesson.id) },
+                                onLongClick = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onToggleComplete(lesson.id, !lesson.isCompleted)
+                                }
+                            )
                             .testTag("lesson_card_${lesson.id}")
                     ) {
                         Column(
@@ -228,6 +211,28 @@ fun LessonsListScreen(
                                             fontSize = 12.sp,
                                             color = SkyInfo
                                         )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .background(DarkCardElevated, RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                                    ) {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.VolumeUp,
+                                                contentDescription = null,
+                                                tint = EmeraldBright,
+                                                modifier = Modifier.size(14.dp)
+                                            )
+                                            Text(
+                                                text = "صوت عربي",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = TextMutedOnDark
+                                            )
+                                        }
                                     }
                                 }
 

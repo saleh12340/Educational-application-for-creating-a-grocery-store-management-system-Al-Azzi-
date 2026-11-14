@@ -5,380 +5,176 @@ import com.example.data.model.LessonItem
 
 object LessonsCatalog {
 
-    val githubWorkflowYaml: String = """
-name: Build Al-Azzi POS & Guide Android APK
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
-  workflow_dispatch:
-
-jobs:
-  build-apk:
-    name: Build Debug APK (Free Tier)
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21 (Temurin)
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '21'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Setup Gradle 9.3.1 & Cache
-        uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '9.3.1'
-
-      - name: Restore debug.keystore for debugConfig signing
-        run: |
-          if [ ! -f "debug.keystore" ]; then
-            if [ -f "debug.keystore.base64" ]; then
-              base64 -d debug.keystore.base64 > debug.keystore
-            else
-              keytool -genkeypair -v -keystore debug.keystore \
-                -storepass android -alias androiddebugkey -keypass android \
-                -keyalg RSA -keysize 2048 -validity 10000 \
-                -dname "CN=Android Debug,O=Android,C=US"
-            fi
-          fi
-
-      - name: Build Debug APK
-        run: |
-          if [ -f "./gradlew" ]; then
-            chmod +x ./gradlew
-            ./gradlew assembleDebug --no-daemon --stacktrace
-          else
-            gradle assembleDebug --no-daemon --stacktrace
-          fi
-
-      - name: Upload Debug APK Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Al-Azzi-POS-Guide-Debug-APK
-          path: app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 30
-    """.trimIndent()
-
     val lessons: List<LessonItem> = listOf(
         LessonItem(
             id = 1,
-            title = "الدرس الأول: التعامل مع النسخة المجانية بالكامل من Google AI Studio وضبط الإعدادات",
-            subtitle = "تهيئة بيئة التطوير السحابية مجاناً بدون بطاقة بنكية وكتابة البرومبت الهندسي الدقيق",
-            durationLabel = "00:32",
+            title = "الدرس الأول: الدخول إلى موقع Google AI Studio المجاني وضبط الحساب",
+            subtitle = "أين تضغط عند فتح الموقع وكيف تبدأ مشروع أندرويد مجاناً بدون بطاقة بنكية",
+            durationLabel = "00:50",
             rawResId = R.raw.lesson_01,
-            topics = listOf("AI Studio Free Tier", "تصدير ZIP", "ربط GitHub"),
-            guideSteps = listOf(
-                "افتح Google AI Studio Build بحساب Google المجاني واختر قالب تطبيق أندرويد أصلي.",
-                "قسّم طلبك إلى متطلبات واضحة: نظام الحسابات المحلي (SQLite)، ألوان الخلفية البيضاء والبطاقات الداكنة، وموضع حقول الإدخال في الأعلى.",
-                "استخدم التحديثات المتدرجة في المحادثة لإضافة المزايا خطوة بخطوة ضمن الحصة المجانية اليومية.",
-                "صدّر المشروع مباشرة إلى مستودع GitHub مجاني أو حمّله بصيغة ZIP لمتابعة التعديل في Acode على الهاتف."
+            stepBoundariesMs = listOf(0L, 12416L, 25528L, 37512L),
+            topics = listOf("تسجيل الدخول", "زر Build", "النسخة المجانية"),
+            clickSteps = listOf(
+                "افتح المتصفح واذهب إلى موقع Google AI Studio (aistudio.google.com) ثم اضغط زر Sign In وسجّل دخولك بحساب Google العادي.",
+                "من القائمة الجانبية اليسرى اضغط على خيار Build (بناء التطبيقات)، ثم اختر Build an Android app لبدء مشروع جديد مجاناً بدون طلب أي بطاقة دفع.",
+                "اضغط داخل مربع الكتابة في أسفل أو وسط الصفحة واكتب فكرة تطبيقك باللغة العربية البسيطة دون كتابة أي رموز برمجية.",
+                "اضغط على زر الإرسال (السهم) وانتظر اكتمال التجهيز، ثم اضغط لاحقاً على أيقونة التصدير أو التحميل لحفظ مشروعك مجاناً."
             ),
-            fileLabel = "Prompt Template — AI Studio Free Tier",
-            codeSnippet = """
-# قالب توجيه هندسي مجاني لـ Google AI Studio:
-1. نوع المشروع: تطبيق أندرويد أصلي بواجهة عربية RTL.
-2. التخزين: قاعدة بيانات SQLite محلية (Room) بدون أي تكاليف سحابية.
-3. التصميم: خلفية بيضاء #FFFFFF بدون شفافية + بطاقات داكنة #111827.
-4. تجربة الهاتف: تثبيت حقول الإدخال في أعلى الشاشة أعلى القائمة.
-5. الأتمتة: إنشاء ملف .github/workflows/build.yml لبناء APK مجاناً.
-            """.trimIndent()
+            guideBoxTitle = "مسار الضغطات داخل الموقع (جاهز للنسخ)",
+            readyGuideText = "افتح aistudio.google.com ← اضغط Sign in ← من القائمة اليسرى اضغط Build ← اختر Android App ← اكتب وصف تطبيقك ← اضغط إرسال."
         ),
         LessonItem(
             id = 2,
-            title = "الدرس الثاني: تصميم الهيكل الأساسي لمشروع الأندرويد وتحديد متطلبات Java 17 و SDK 35",
-            subtitle = "إعداد ملفات Gradle والمستودع وهيكلة الحزم والمكتبات الأساسية بدقة",
-            durationLabel = "00:32",
+            title = "الدرس الثاني: تحديد نوع التطبيق واللغة وإعدادات البداية في الموقع",
+            subtitle = "كيف تطلب من الموقع تجهيز تطبيق عربي يعمل مجاناً وبدون اشتراكات",
+            durationLabel = "00:50",
             rawResId = R.raw.lesson_02,
-            topics = listOf("SDK 35/36", "Java 17", "Gradle KTS", "Media3"),
-            guideSteps = listOf(
-                "تأكد من ضبط compileSdk و targetSdk مع توافق Java 17 في إعدادات Gradle وبيئة البناء.",
-                "افصل الكود إلى طبقات نظيفة: data (الكيانات و DAO وقاعدة البيانات) و ui (الشاشات والسمات).",
-                "فعّل مكتبات Media3 ExoPlayer للتشغيل التفاعلي ومكتبة Room لقاعدة بيانات SQLite المحلية.",
-                "استخدم applicationId فريد لكل مشروع مع الحفاظ على namespace منظم للمصادر."
+            stepBoundariesMs = listOf(0L, 12560L, 25408L, 36864L),
+            topics = listOf("اسم التطبيق", "لغة عربية RTL", "بدون اشتراك"),
+            clickSteps = listOf(
+                "في مربع المحادثة اكتب أولاً اسم التطبيق الذي تريده، واطلب أن تكون جميع القوائم والأزرار باللغة العربية من اليمين إلى اليسار.",
+                "أضف في نفس الرسالة أنك تريد الاعتماد على الأدوات المجانية والتخزين المحلي على الهاتف بدون خوادم مدفوعة أو تسجيل دخول إجباري.",
+                "بعد الضغط على زر الإرسال، راقب شريط التقدم ولا تغلق الصفحة حتى تظهر عبارة اكتمال البناء باللون الأخضر.",
+                "اضغط على الأزرار داخل شاشة الهاتف التجريبية في الجانب (المحاكي) للتأكد من أن كل شاشة تفتح بالطريقة التي طلبتها."
             ),
-            fileLabel = "app/build.gradle.kts",
-            codeSnippet = """
-android {
-    namespace = "com.example"
-    compileSdk = 35
-
-    defaultConfig {
-        applicationId = "com.alazzi.pos.guide"
-        minSdk = 24
-        targetSdk = 35
-        versionCode = 1
-        versionName = "1.0"
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-}
-
-dependencies {
-    implementation("androidx.media3:media3-exoplayer:1.5.1")
-    implementation("androidx.media3:media3-ui:1.5.1")
-    implementation("androidx.room:room-runtime:2.7.0")
-}
-            """.trimIndent()
+            guideBoxTitle = "جملة جاهزة للنسخ واللصق في AI Studio",
+            readyGuideText = "أنشئ تطبيق أندرويد باللغة العربية من اليمين لليسار باسم [اسم تطبيقك]، يعتمد على الأدوات المجانية بالكامل ويعمل بدون إنترنت أو تسجيل دخول."
         ),
         LessonItem(
             id = 3,
-            title = "الدرس الثالث: بناء واجهات المستخدم المخصصة لإدارة المتاجر (البطاقات الداكنة والخلفيات البيضاء)",
-            subtitle = "تطبيق نظام الألوان عالي التباين وتثبيت الإدخالات في أعلى الشاشة للهواتف",
-            durationLabel = "00:32",
+            title = "الدرس الثالث: طلب الخلفية البيضاء والبطاقات الداكنة وموضع الإدخالات",
+            subtitle = "كيف توجّه الموقع بالضغطات والوصف لتصميم شاشة واضحة على الهاتف",
+            durationLabel = "00:52",
             rawResId = R.raw.lesson_03,
-            topics = listOf("خلفية بيضاء", "بطاقات داكنة عاتمة", "حماية الكيبورد"),
-            guideSteps = listOf(
-                "اضبط خلفية جميع الشاشات على اللون الأبيض النقي #FFFFFF بدون أي شفافية زجاجية (No Glassmorphism).",
-                "استخدم بطاقات داكنة عاتمة تماماً #111827 للنصوص والملخصات لتوفير أقصى وضوح تحت إضاءة البقالة.",
-                "ضع حقول البحث وإضافة العميل وتسجيل العملية في أعلى الشاشة تماماً حتى لا تغطيها لوحة المفاتيح.",
-                "اعرض الاسم الكامل للعميل دون قص أو نقاط (...)، واجعل مربع الرصيد رقمياً فقط لسرعة القراءة."
+            stepBoundariesMs = listOf(0L, 13592L, 27208L, 39768L),
+            topics = listOf("خلفية بيضاء", "بطاقات داكنة", "أعلى الشاشة"),
+            clickSteps = listOf(
+                "اكتب في المحادثة أنك تريد خلفية بيضاء نقية بالكامل بدون أي شفافية زجاجية أو ألوان باهتة لتكون واضحة في ضوء النهار.",
+                "اطلب وضع العناصر والمعلومات داخل بطاقات داكنة عاتمة بلون موحد مع خط أبيض واضح.",
+                "نبّه الموقع في رسالتك أن يضع مربعات البحث والكتابة في أعلى الشاشة تماماً حتى لا تغطيها لوحة المفاتيح عند الكتابة من الهاتف.",
+                "بعد انتهاء التحديث اضغط على خانة البحث في شاشة المحاكي الجانبية وتأكد أن مربع الكتابة والأزرار تبقى ظاهرة بالكامل."
             ),
-            fileLabel = "CustomerCardTheme.kt",
-            codeSnippet = """
-// بطاقة عميل داكنة عاتمة فوق خلفية بيضاء نقية
-Surface(
-    color = Color(0xFF111827), // عاتم 100% بدون شفافية
-    shape = RoundedCornerShape(14.dp),
-    modifier = Modifier.fillMaxWidth()
-) {
-    Row(
-        modifier = Modifier.padding(14.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // الاسم الكامل بدون أي قص أو Ellipsis
-        Text(
-            text = customer.fullName,
-            color = Color.White,
-            softWrap = true,
-            modifier = Modifier.weight(1f)
-        )
-        // مربع الرصيد: القيمة الرقمية فقط
-        Box(
-            modifier = Modifier
-                .background(Color(0xFF1E293B), RoundedCornerShape(8.dp))
-                .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Text(text = formatNumericOnly(customer.currentBalance))
-        }
-    }
-}
-            """.trimIndent()
+            guideBoxTitle = "طلب تصميم جاهز للنسخ في الموقع",
+            readyGuideText = "اجعل خلفية التطبيق بيضاء نقية بدون أي شفافية زجاجية، وضع المحتوى داخل بطاقات داكنة عاتمة، وثبّت جميع مربعات الكتابة في أعلى الشاشة تماماً فوق القائمة."
         ),
         LessonItem(
             id = 4,
-            title = "الدرس الرابع: إدارة قواعد البيانات المحلية (SQLite) لتخزين بيانات الزبائن والفواتير محلياً مجاناً",
-            subtitle = "تصميم الجداول والعلاقات والحفظ الآمن دون الحاجة لخوادم أو اشتراكات شهرية",
-            durationLabel = "00:32",
+            title = "الدرس الرابع: ضبط الحفظ المحلي المجاني والتجربة على المحاكي",
+            subtitle = "التأكد من بقاء الإعدادات والتقدم محفوظاً على الهاتف بدون أي رسوم",
+            durationLabel = "00:52",
             rawResId = R.raw.lesson_04,
-            topics = listOf("SQLite", "Room DAO", "Cascade Delete", "تصدير JSON"),
-            guideSteps = listOf(
-                "أنشئ جدول customers لحفظ الاسم الكامل والهاتف وجدول transactions لحفظ الديون والسداد مع ForeignKey.",
-                "فعّل onDelete = CASCADE لحذف عمليات العميل تلقائياً عند حذفه ومنع بقاء سجلات يتيمة.",
-                "استخدم تدفقات Flow التفاعلية لتحديث الأرصدة والجداول فوراً بمجرد تسجيل أي عملية جديدة.",
-                "أضف ميزة النسخ الاحتياطي عبر Storage Access Framework لتصدير البيانات بصيغة JSON مجاناً دون أذونات تخزين خطرة."
+            stepBoundariesMs = listOf(0L, 13000L, 26000L, 39000L),
+            topics = listOf("حفظ محلي", "بدون إنترنت", "نسخة احتياطية"),
+            clickSteps = listOf(
+                "اطلب في رسالتك للموقع أن يتم حفظ جميع البيانات والتقدم محلياً داخل ذاكرة الهاتف مجاناً دون ربط بسحابة مدفوعة.",
+                "تأكد من طلب فتح التطبيق مباشرة على الشاشة الرئيسية دون إظهار شاشات تسجيل دخول أو اشتراك.",
+                "اضغط على أزرار التطبيق داخل المعاينة وأضف بيانات أو علّم على درس مكتمل، ثم اضغط زر إعادة تشغيل المعاينة للتأكد من بقاء الحفظ.",
+                "إن احتجت تصدير بياناتك مستقبلاً، اطلب إضافة زر حفظ نسخة في ملفات الهاتف عبر منتقي الملفات الآمن."
             ),
-            fileLabel = "AlAzziDatabase.kt",
-            codeSnippet = """
-@Entity(
-    tableName = "transactions",
-    foreignKeys = [ForeignKey(
-        entity = CustomerEntity::class,
-        parentColumns = ["id"],
-        childColumns = ["customerId"],
-        onDelete = ForeignKey.CASCADE
-    )],
-    indices = [Index("customerId")]
-)
-data class TransactionEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val customerId: Long,
-    val type: TransactionType, // DEBT or PAYMENT
-    val amount: Double,
-    val description: String,
-    val timestamp: Long = System.currentTimeMillis()
-)
-            """.trimIndent()
+            guideBoxTitle = "عبارة طلب الحفظ المجاني للنسخ",
+            readyGuideText = "احفظ جميع البيانات محلياً على جهاز الهاتف مجاناً بدون أي خوادم خارجية، وافتح التطبيق مباشرة بدون شاشة تسجيل دخول."
         ),
         LessonItem(
             id = 5,
-            title = "الدرس الخامس: برمجة شاشة سجل العمليات وتصميم الجداول العريضة للرصيد التراكمي",
-            subtitle = "حساب الرصيد التراكمي بدقة لكل صف وعرض الأعمدة الخمسة بعرض الشاشة الكامل",
-            durationLabel = "00:32",
+            title = "الدرس الخامس: ترتيب القوائم وإظهار النصوص كاملة بدون قص",
+            subtitle = "خطوات التحقق من وضوح النصوص والأرقام على شاشة الجوال",
+            durationLabel = "00:50",
             rawResId = R.raw.lesson_05,
-            topics = listOf("جدول عريض", "الرصيد التراكمي", "التاريخ والوقت"),
-            guideSteps = listOf(
-                "رتب عمليات العميل تصاعدياً حسب الوقت (timestamp ASC) لحساب الرصيد التراكمي من أول عملية حتى آخر عملية.",
-                "أضف المبلغ في حالة البيع الآجل (DEBT) واطرحه في حالة السداد النقدي (PAYMENT).",
-                "صمم صف ترويسة داكن عاتم بعرض الشاشة الكامل يضم الأعمدة: العملية، التاريخ، الوقت، المبلغ، التراكمي.",
-                "اعرض أحدث العمليات في الأعلى مباشرة أسفل نموذج الإدخال لتسهيل المراجعة الفورية على الكاشير."
+            stepBoundariesMs = listOf(0L, 12500L, 25000L, 37500L),
+            topics = listOf("بدون قص", "خط واضح", "تناسق العرض"),
+            clickSteps = listOf(
+                "اطلب من الموقع إظهار جميع الأسماء والعناوين كاملة داخل البطاقات مع السماح بالتفاف السطر دون قص الكلمات بنقاط.",
+                "اطلب أن تكون مربعات الأرقام والمؤشرات مختصرة وواضحة برقم واضح فقط دون كلمات مزدحمة داخل المربع.",
+                "اطلب ترتيب المعلومات داخل صفوف متناسقة تملأ عرض الشاشة بالكامل مع تباعد مريح للعين.",
+                "افتح شاشة المعاينة في الموقع ومرّر القائمة للأعلى والأسفل للتأكد من عدم تداخل أي نص أو رقم."
             ),
-            fileLabel = "CumulativeBalanceCalculator.kt",
-            codeSnippet = """
-fun computeLedgerRows(transactionsAsc: List<TransactionEntity>): List<LedgerRow> {
-    var runningBalance = 0.0
-    val rows = transactionsAsc.map { tx ->
-        runningBalance = when (tx.type) {
-            TransactionType.DEBT -> runningBalance + tx.amount
-            TransactionType.PAYMENT -> runningBalance - tx.amount
-        }
-        LedgerRow(
-            id = tx.id,
-            customerId = tx.customerId,
-            type = tx.type,
-            amount = tx.amount,
-            description = tx.description,
-            timestamp = tx.timestamp,
-            dateLabel = formatDate(tx.timestamp),
-            timeLabel = formatTime(tx.timestamp),
-            cumulativeBalance = runningBalance
-        )
-    }
-    return rows.reversed() // الأحدث في الأعلى مع دقة التراكمي
-}
-            """.trimIndent()
+            guideBoxTitle = "طلب تحسين العرض للنسخ",
+            readyGuideText = "اعرض العناوين والأسماء كاملة دون اختصار أو قص، واجعل مربعات الأرقام تعرض القيمة الرقمية فقط بخط واضح وعريض."
         ),
         LessonItem(
             id = 6,
-            title = "الدرس السادس: تطبيق تفاعلات اللمس المتقدمة (Long-press وتوجيهات التنقل العلوي)",
-            subtitle = "برمجة الضغط المطول لخيارات التعديل والحذف وسهم الرجوع العلوي بدون شريط سفلي",
-            durationLabel = "00:32",
+            title = "الدرس السادس: الضغط المطول وسهم الرجوع العلوي وإزالة الشريط السفلي",
+            subtitle = "كيف توجه الموقع لتبسيط التنقل ومنع اللمس العرضي أسفل الشاشة",
+            durationLabel = "00:50",
             rawResId = R.raw.lesson_06,
-            topics = listOf("Long-press", "HapticFeedback", "سهم الرجوع العلوي"),
-            guideSteps = listOf(
-                "استبدل أزرار التعديل والحذف المزدحمة في صفوف الجدول بتفاعل الضغط المطول combinedClickable.",
-                "أضف اهتزازاً لمسياً خفيفاً (HapticFeedbackType.LongPress) لإعطاء المستخدم إحساساً فورياً بفتح قائمة الخيارات.",
-                "ألغِ شريط التنقل السفلي (زر الرئيسية السفلي) تماماً لتوسيع مساحة القراءة ومنع اللمس بالخطأ.",
-                "ضع سهم الرجوع في أعلى الشاشة في الشريط العلوي مع ربط زر الرجوع في النظام بنفس المسار."
+            stepBoundariesMs = listOf(0L, 12500L, 25000L, 37500L),
+            topics = listOf("سهم علوي", "الضغط المطول", "إلغاء السفلي"),
+            clickSteps = listOf(
+                "اكتب للموقع أن يحذف شريط التنقل أو زر الرئيسية السفلي تماماً لتوسيع مساحة الشاشة.",
+                "اطلب وضع سهم رجوع واضح في أعلى كل شاشة فرعية للعودة السريعة بضغطة واحدة.",
+                "اطلب تفعيل خيار الضغط المطول على البطاقات أو الصفوف لتنفيذ الإجراءات السريعة بدون ازدحام الأزرار.",
+                "جرّب الضغط المطول والضغط على سهم الرجوع العلوي في المعاينة الجانبية للتأكد من استجابتهما فوراً."
             ),
-            fileLabel = "LongPressRowModifier.kt",
-            codeSnippet = """
-Row(
-    modifier = Modifier
-        .fillMaxWidth()
-        .combinedClickable(
-            onClick = { onSelectRow(row) },
-            onLongClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                selectedForAction = row
-            }
-        )
-        .padding(vertical = 10.dp, horizontal = 8.dp)
-) {
-    // أعمدة الجدول العريض الخمسة
-}
-            """.trimIndent()
+            guideBoxTitle = "طلب التنقل المريح للنسخ",
+            readyGuideText = "ألغِ زر الرئيسية والشريط السفلي تماماً، وضع سهم رجوع واضح في أعلى الشاشة، واجعل الخيارات الإضافية تفتح بالضغط المطول."
         ),
         LessonItem(
             id = 7,
-            title = "الدرس السابع: ربط التطبيق بخيارات الطباعة الحرارية وفواتير الاستلام",
-            subtitle = "توليد فاتورة حرارية متناسقة 58mm/80mm والطباعة عبر Android PrintManager أو البلوتوث",
-            durationLabel = "00:32",
+            title = "الدرس السابع: طلب مشغل الفيديو بالصوت العربي وعناصر التحكم السلسة",
+            subtitle = "تشغيل الدروس من داخل التطبيق بدون إنترنت أو انقطاع",
+            durationLabel = "00:52",
             rawResId = R.raw.lesson_07,
-            topics = listOf("طباعة حرارية", "PrintManager", "مشاركة نصية"),
-            guideSteps = listOf(
-                "صمم نموذج فاتورة حرارية يحمل ترويسة (بقالة العزي للمواد الغذائية) واسم العميل الكامل والتاريخ والمبلغ والرصيد التراكمي.",
-                "استخدم خدمة Android PrintManager مع مستند WebView HTML لطباعة الفاتورة أو حفظها بصيغة PDF بدون مكتبات مدفوعة.",
-                "أضف خيار المشاركة النصية السريعة لتمرير الفاتورة إلى تطبيقات الطابعات الحرارية عبر البلوتوث أو واتساب.",
-                "استخدم خط JetBrains Mono لمحاذاة الأرقام والأعمدة داخل الإيصال الحراري بوضوح تام."
+            stepBoundariesMs = listOf(0L, 13000L, 26000L, 39000L),
+            topics = listOf("صوت عربي", "تقديم وتأخير", "بدون نت"),
+            clickSteps = listOf(
+                "اطلب من الموقع تجهيز مشغل فيديو يحتوي على أزرار واضحة للتشغيل والإيقاف المؤقت والتقديم والتأخير وزر كتم الصوت.",
+                "اطلب إضافة شريط زمني سلس يمكن سحبه للتنقل داخل الفيديو، مع خيار تغيير سرعة التشغيل.",
+                "تأكد من طلب تضمين ملفات الفيديو والصوت داخل التطبيق نفسه لتعمل في المناطق ضعيفة الإنترنت أو بدونه تماماً.",
+                "اضغط على أحد الدروس في المعاينة وتأكد من سماع الصوت وتفاعل أزرار التقديم والتأخير والشريط الزمني."
             ),
-            fileLabel = "ThermalReceiptPrinter.kt",
-            codeSnippet = """
-fun printThermalHtml(context: Context, jobName: String, htmlContent: String) {
-    val webView = WebView(context)
-    webView.webViewClient = object : WebViewClient() {
-        override fun onPageFinished(view: WebView, url: String) {
-            val printManager = context.getSystemService(Context.PRINT_SERVICE) as PrintManager
-            val adapter = view.createPrintDocumentAdapter(jobName)
-            printManager.print(jobName, adapter, PrintAttributes.Builder().build())
-        }
-    }
-    webView.loadDataWithBaseURL(null, htmlContent, "text/HTML", "UTF-8", null)
-}
-            """.trimIndent()
+            guideBoxTitle = "طلب مشغل الفيديو للنسخ",
+            readyGuideText = "أضف مشغل فيديو يعمل بدون إنترنت بالصوت العربي مع أزرار التشغيل والإيقاف والتقديم والتأخير وكتم الصوت وشريط تحكم زمني سلس."
         ),
         LessonItem(
             id = 8,
-            title = "الدرس الثامن: إعداد وربط مستودع GitHub وتكوين نظام النسخة البرمجية المجاني",
-            subtitle = "رفع ملفات المشروع من الهاتف عبر Acode و Git والاحتفاظ بسجل التغييرات مجاناً",
-            durationLabel = "00:32",
+            title = "الدرس الثامن: إنشاء حساب GitHub مجاني ورفع مشروعك بالضغطات",
+            subtitle = "كيف تفتح مستودعاً مجانياً وترفع ملفات التطبيق من المتصفح أو الهاتف",
+            durationLabel = "00:49",
             rawResId = R.raw.lesson_08,
-            topics = listOf("GitHub Free", "Acode", "Git Push", ".gitignore"),
-            guideSteps = listOf(
-                "أنشئ مستودعاً جديداً مجانياً على GitHub (عام أو خاص — كلاهما يدعم GitHub Actions مجاناً).",
-                "تأكد من وجود ملف .gitignore لاستبعاد مجلدات build و .gradle والملفات المحلية المؤقتة.",
-                "افتح المشروع في تطبيق Acode أو Termux واربط المستودع بأمر git remote add origin.",
-                "ادفع التعديلات إلى الفرع main ليبدأ خادم GitHub السحابي بتجميع التطبيق تلقائياً."
+            stepBoundariesMs = listOf(0L, 11720L, 24136L, 36432L),
+            topics = listOf("حساب GitHub", "New Repository", "رفع المشروع"),
+            clickSteps = listOf(
+                "افتح موقع github.com واضغط Sign up لإنشاء حساب مجاني ببريدك الإلكتروني وتأكيد الرمز.",
+                "بعد الدخول، اضغط على علامة (+) في أعلى الصفحة واختر New repository، ثم اكتب اسم المشروع واضغط Create repository.",
+                "في Google AI Studio، اضغط على أيقونة GitHub أو Export / Download ZIP في الشريط العلوي لنقل مشروعك إلى المستودع.",
+                "افتح صفحة المستودع على GitHub وتأكد من ظهور المجلدات والملفات على الفرع الرئيسي main."
             ),
-            fileLabel = "Git Setup Commands (Termux / Acode)",
-            codeSnippet = """
-git init
-git add .
-git commit -m "Initial commit: Al-Azzi POS & Guide App"
-git branch -M main
-git remote add origin https://github.com/USERNAME/al-azzi-pos-guide.git
-git push -u origin main
-            """.trimIndent()
+            guideBoxTitle = "خطوات الضغط في GitHub",
+            readyGuideText = "github.com ← Sign up ← علامة (+) ← New repository ← اكتب الاسم ← Create repository ← اربط أو ارفع ملفات المشروع."
         ),
         LessonItem(
             id = 9,
-            title = "الدرس التاسع: بناء وتهيئة ملفات GitHub Actions الآلية لتجميع وضبط ملفات الـ APK مجاناً",
-            subtitle = "كتابة ملف .github/workflows/build.yml لاستخراج ملف app-debug.apk جاهز للتحميل",
-            durationLabel = "00:32",
+            title = "الدرس التاسع: استخدام تبويب Actions في GitHub لاستخراج ملف APK مجاناً",
+            subtitle = "أين تضغط لبدء التجميع السحابي وتحميل ملف التثبيت على هاتفك",
+            durationLabel = "00:50",
             rawResId = R.raw.lesson_09,
-            topics = listOf("GitHub Actions", "Java 17", "assembleDebug", "Artifacts"),
-            guideSteps = listOf(
-                "أنشئ المسار .github/workflows/build.yml داخل جذر المستودع.",
-                "حدد المشغّل ubuntu-latest المجاني الذي يمنحك 2000 دقيقة بناء شهرية مجاناً على GitHub.",
-                "أضف خطوات setup-java@v4 بنسخة 17، ثم setup-android@v3، ثم setup-gradle@v4 لتسريع التحميل.",
-                "شغّل ./gradlew assembleDebug وارفع ملف app/build/outputs/apk/debug/*.apk عبر upload-artifact@v4."
+            stepBoundariesMs = listOf(0L, 12500L, 25000L, 37500L),
+            topics = listOf("تبويب Actions", "علامة الصح الخضراء", "Artifacts"),
+            clickSteps = listOf(
+                "ادخل إلى صفحة مشروعك في موقع GitHub واضغط على تبويب Actions في الشريط العلوي.",
+                "اختر عملية البناء من القائمة الجانبية، وإذا أردت تشغيلها يدوياً اضغط على زر Run workflow ثم الزر الأخضر.",
+                "انتظر من دقيقتين إلى ثلاث دقائق حتى تتحول الأيقونة الصفراء الدوارة إلى علامة صح خضراء.",
+                "اضغط على اسم البناء المكتمل ثم انزل إلى أسفل الصفحة عند قسم Artifacts واضغط على اسم ملف الـ APK لتحميله مجاناً."
             ),
-            fileLabel = ".github/workflows/build.yml",
-            codeSnippet = githubWorkflowYaml
+            guideBoxTitle = "مسار تحميل الـ APK من GitHub",
+            readyGuideText = "صفحة المستودع ← تبويب Actions ← اضغط آخر عملية مكتملة (علامة صح خضراء) ← انزل إلى Artifacts ← اضغط لتحميل ملف الـ APK."
         ),
         LessonItem(
             id = 10,
-            title = "الدرس العاشر: اختبار التطبيق نهائياً، اكتشاف الأخطاء، وحل مشاكل التوافقية على الهواتف",
-            subtitle = "فحص شاشات الهاتف، تجنب تداخل الكيبورد، واختبارات Robolectric قبل التثبيت النهائي",
-            durationLabel = "00:32",
+            title = "الدرس العاشر: تثبيت التطبيق على الهاتف وحل أي خطأ بناء بسهولة",
+            subtitle = "فك الضغط عن الملف المحمل ومعالجة أي خطأ عبر لقطة الشاشة في AI Studio",
+            durationLabel = "00:50",
             rawResId = R.raw.lesson_10,
-            topics = listOf("اختبار الواجهة", "RTL", "ExoPlayer Lifecycle", "APK Verification"),
-            guideSteps = listOf(
-                "تحقق من تحرير موارد ExoPlayer داخل DisposableEffect(onDispose) لمنع استنزاف الذاكرة عند الرجوع.",
-                "اختبر فتح لوحة المفاتيح على الشاشات الصغيرة للتأكد من بقاء حقول الإدخال العلوية ظاهرة بالكامل.",
-                "تأكد من إعادة احتساب الرصيد التراكمي عند تعديل أو حذف أي عملية قديمة من وسط السجل.",
-                "حمّل ملف APK من تبويب Actions في GitHub وثبّته على هاتفك للتحقق من سرعة الاستجابة والطباعة."
+            stepBoundariesMs = listOf(0L, 12500L, 25000L, 37500L),
+            topics = listOf("فك الضغط", "تثبيت APK", "إصلاح الأخطاء"),
+            clickSteps = listOf(
+                "افتح تطبيق الملفات أو التنزيلات على هاتفك واضغط على الملف المضغوط المحمّل من GitHub ثم اختر استخراج (Extract).",
+                "اضغط على ملف APK المستخرج، وعند ظهور تنبيه الأمان اختر الإعدادات ← السماح من هذا المصدر ← ثم اضغط تثبيت.",
+                "إذا ظهر لك خطأ أحمر (X) في تبويب Actions على GitHub، اضغط عليه والتقط صورة للشاشة أو انسخ سطر الخطأ.",
+                "ارجع إلى Google AI Studio وأرفق صورة الخطأ عبر أيقونة الإرفاق واكتب (أصلح هذا الخطأ)، ثم أعد التحديث إلى GitHub."
             ),
-            fileLabel = "ExoPlayerLifecycleCheck.kt",
-            codeSnippet = """
-DisposableEffect(lesson.id) {
-    val mediaItem = MediaItem.fromUri(lesson.videoUrl)
-    exoPlayer.setMediaItem(mediaItem)
-    exoPlayer.prepare()
-    onDispose {
-        exoPlayer.pause()
-    }
-}
-
-DisposableEffect(Unit) {
-    onDispose {
-        exoPlayer.release() // تحرير الذاكرة تماماً عند مغادرة الشاشة
-    }
-}
-            """.trimIndent()
+            guideBoxTitle = "خطوات التثبيت وحل الأخطاء",
+            readyGuideText = "التنزيلات ← فك الضغط عن الملف ← اضغط APK ← السماح بالتثبيت ← تثبيت | وعند أي خطأ في GitHub صوّر الشاشة وأرسلها لـ AI Studio."
         )
     )
 }

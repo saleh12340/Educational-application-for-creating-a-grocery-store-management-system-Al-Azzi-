@@ -1,10 +1,12 @@
 package com.example.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +36,9 @@ import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material.icons.filled.VolumeOff
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -85,7 +90,6 @@ import com.example.ui.theme.PureWhite
 import com.example.ui.theme.SkyInfo
 import com.example.ui.theme.TextMutedOnDark
 import com.example.ui.theme.TextOnDark
-import com.example.util.ThermalPrinterHelper
 import kotlinx.coroutines.delay
 import java.util.Locale
 
@@ -106,9 +110,10 @@ fun LessonPlayerScreen(
     }
 
     var isPlaying by remember { mutableStateOf(false) }
+    var isMuted by remember { mutableStateOf(false) }
     var playerError by remember { mutableStateOf<String?>(null) }
     var currentPositionMs by remember { mutableLongStateOf(0L) }
-    var durationMs by remember { mutableLongStateOf(32_000L) }
+    var durationMs by remember { mutableLongStateOf(30_000L) }
     var playbackSpeed by remember { mutableFloatStateOf(1.0f) }
     var isUserScrubbing by remember { mutableStateOf(false) }
     var scrubValueMs by remember { mutableFloatStateOf(0f) }
@@ -141,9 +146,10 @@ fun LessonPlayerScreen(
     LaunchedEffect(lesson.id) {
         playerError = null
         currentPositionMs = 0L
-        durationMs = 32_000L
+        durationMs = 30_000L
         val rawUri = RawResourceDataSource.buildRawResourceUri(lesson.rawResId)
         exoPlayer.setMediaItem(MediaItem.fromUri(rawUri))
+        exoPlayer.volume = if (isMuted) 0f else 1f
         exoPlayer.prepare()
         exoPlayer.playWhenReady = true
     }
@@ -159,7 +165,14 @@ fun LessonPlayerScreen(
         }
     }
 
-    val activeStepIndex = ((currentPositionMs / 8_000L).toInt()).coerceIn(0, 3)
+    val activeStepIndex = remember(currentPositionMs, lesson.stepBoundariesMs) {
+        val boundaries = lesson.stepBoundariesMs
+        if (boundaries.isEmpty()) {
+            0
+        } else {
+            boundaries.indexOfLast { currentPositionMs >= it }.coerceAtLeast(0)
+        }
+    }
 
     Surface(
         color = PureWhite,
@@ -172,7 +185,7 @@ fun LessonPlayerScreen(
         ) {
             AlAzziTopBar(
                 title = "الدرس ${lesson.id} من $totalLessons",
-                subtitle = "${lesson.durationLabel} • يعمل بدون إنترنت",
+                subtitle = "${lesson.durationLabel} • صوت عربي بدون نت",
                 onBackClick = onBack,
                 actions = {
                     Button(
@@ -209,7 +222,7 @@ fun LessonPlayerScreen(
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Dark Opaque Offline Video Player Container
+                // Dark Opaque Voiced Video Player Container
                 Surface(
                     color = DarkPlayerSurface,
                     shape = RoundedCornerShape(16.dp),
@@ -240,7 +253,6 @@ fun LessonPlayerScreen(
                                 modifier = Modifier.fillMaxSize()
                             )
 
-                            // Offline Ready Badge
                             Surface(
                                 color = DarkCardPrimary,
                                 shape = RoundedCornerShape(8.dp),
@@ -261,7 +273,7 @@ fun LessonPlayerScreen(
                                         modifier = Modifier.size(14.dp)
                                     )
                                     Text(
-                                        text = "تشغيل محلي بدون نت",
+                                        text = "فيديو صوتي بدون نت",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = TextOnDark
                                     )
@@ -304,7 +316,7 @@ fun LessonPlayerScreen(
                             }
                         }
 
-                        // Interactive ExoPlayer Controls: Rewind, Play/Pause, Fast-forward, Timeline Scrubber, Speed
+                        // Interactive Controls: Timeline Slider, Mute, Speed, Rewind, Play/Pause, Fast-Forward
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -360,34 +372,57 @@ fun LessonPlayerScreen(
                                     fontSize = 12.sp,
                                     color = TextMutedOnDark
                                 )
-                                Button(
-                                    onClick = {
-                                        val nextSpeed = when (playbackSpeed) {
-                                            1.0f -> 1.25f
-                                            1.25f -> 1.5f
-                                            1.5f -> 2.0f
-                                            else -> 1.0f
-                                        }
-                                        playbackSpeed = nextSpeed
-                                        exoPlayer.setPlaybackSpeed(nextSpeed)
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = DarkCardElevated,
-                                        contentColor = SkyInfo
-                                    ),
-                                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                                    shape = RoundedCornerShape(8.dp),
-                                    modifier = Modifier.minimumInteractiveComponentSize()
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
-                                    Text(
-                                        text = "${playbackSpeed}x",
-                                        fontFamily = JetBrainsMonoFontFamily,
-                                        fontSize = 12.sp
-                                    )
+                                    IconButton(
+                                        onClick = {
+                                            isMuted = !isMuted
+                                            exoPlayer.volume = if (isMuted) 0f else 1f
+                                        },
+                                        modifier = Modifier
+                                            .minimumInteractiveComponentSize()
+                                            .background(DarkCardElevated, RoundedCornerShape(8.dp))
+                                            .testTag("video_mute_button")
+                                    ) {
+                                        Icon(
+                                            imageVector = if (isMuted) Icons.Default.VolumeOff else Icons.Default.VolumeUp,
+                                            contentDescription = stringResource(R.string.cd_mute),
+                                            tint = if (isMuted) AmberDebt else EmeraldBright,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+
+                                    Button(
+                                        onClick = {
+                                            val nextSpeed = when (playbackSpeed) {
+                                                1.0f -> 1.25f
+                                                1.25f -> 1.5f
+                                                1.5f -> 2.0f
+                                                else -> 1.0f
+                                            }
+                                            playbackSpeed = nextSpeed
+                                            exoPlayer.setPlaybackSpeed(nextSpeed)
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = DarkCardElevated,
+                                            contentColor = SkyInfo
+                                        ),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                                        shape = RoundedCornerShape(8.dp),
+                                        modifier = Modifier.minimumInteractiveComponentSize()
+                                    ) {
+                                        Text(
+                                            text = "${playbackSpeed}x",
+                                            fontFamily = JetBrainsMonoFontFamily,
+                                            fontSize = 12.sp
+                                        )
+                                    }
                                 }
                             }
 
-                            // Playback Transport Controls (Rewind 5s/10s, Play/Pause, Fast-Forward 5s/10s)
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -397,7 +432,7 @@ fun LessonPlayerScreen(
                             ) {
                                 IconButton(
                                     onClick = {
-                                        val target = (exoPlayer.currentPosition - 8_000L).coerceAtLeast(0L)
+                                        val target = (exoPlayer.currentPosition - 5_000L).coerceAtLeast(0L)
                                         exoPlayer.seekTo(target)
                                         currentPositionMs = target
                                     },
@@ -444,7 +479,7 @@ fun LessonPlayerScreen(
                                 IconButton(
                                     onClick = {
                                         val maxPos = exoPlayer.duration.coerceAtLeast(durationMs)
-                                        val target = (exoPlayer.currentPosition + 8_000L).coerceAtMost(maxPos)
+                                        val target = (exoPlayer.currentPosition + 5_000L).coerceAtMost(maxPos)
                                         exoPlayer.seekTo(target)
                                         currentPositionMs = target
                                     },
@@ -504,7 +539,7 @@ fun LessonPlayerScreen(
                     }
                 }
 
-                // Synced Arabic Lesson Guide (Highlights active step as video plays!)
+                // Website Click-by-Click Arabic Guide (Synced with Spoken Audio!)
                 Surface(
                     color = DarkCardPrimary,
                     shape = RoundedCornerShape(14.dp),
@@ -515,14 +550,24 @@ fun LessonPlayerScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Text(
-                            text = lesson.title,
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = TextOnDark
-                            ),
-                            softWrap = true
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.TouchApp,
+                                contentDescription = null,
+                                tint = EmeraldBright
+                            )
+                            Text(
+                                text = lesson.title,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextOnDark
+                                ),
+                                softWrap = true
+                            )
+                        }
                         Text(
                             text = lesson.subtitle,
                             style = MaterialTheme.typography.bodySmall,
@@ -530,7 +575,7 @@ fun LessonPlayerScreen(
                             softWrap = true
                         )
 
-                        lesson.guideSteps.forEachIndexed { idx, step ->
+                        lesson.clickSteps.forEachIndexed { idx, step ->
                             val isCurrentStep = idx == activeStepIndex
                             Surface(
                                 color = if (isCurrentStep) DarkCardElevated else DarkCardPrimary,
@@ -539,7 +584,7 @@ fun LessonPlayerScreen(
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(8.dp),
+                                    modifier = Modifier.padding(10.dp),
                                     verticalAlignment = Alignment.Top,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
@@ -549,7 +594,7 @@ fun LessonPlayerScreen(
                                                 if (isCurrentStep) EmeraldBright else EmeraldPrimary,
                                                 RoundedCornerShape(6.dp)
                                             )
-                                            .padding(horizontal = 7.dp, vertical = 2.dp)
+                                            .padding(horizontal = 8.dp, vertical = 2.dp)
                                     ) {
                                         Text(
                                             text = "${idx + 1}",
@@ -572,7 +617,7 @@ fun LessonPlayerScreen(
                     }
                 }
 
-                // Copyable Code Template Card (Dark Opaque Card)
+                // Ready-to-Copy Website Click Path / Arabic Prompt Card (NO CODE!)
                 Surface(
                     color = DarkCardPrimary,
                     shape = RoundedCornerShape(14.dp),
@@ -589,19 +634,16 @@ fun LessonPlayerScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = lesson.fileLabel,
-                                fontFamily = JetBrainsMonoFontFamily,
-                                fontSize = 12.sp,
-                                color = SkyInfo,
+                                text = lesson.guideBoxTitle,
+                                style = MaterialTheme.typography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = SkyInfo
+                                ),
                                 modifier = Modifier.weight(1f)
                             )
                             Button(
                                 onClick = {
-                                    ThermalPrinterHelper.copyToClipboard(
-                                        context = context,
-                                        label = lesson.fileLabel,
-                                        text = lesson.codeSnippet
-                                    )
+                                    copyPlainText(context, lesson.guideBoxTitle, lesson.readyGuideText)
                                     Toast.makeText(
                                         context,
                                         context.getString(R.string.msg_copied),
@@ -616,15 +658,15 @@ fun LessonPlayerScreen(
                                 shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier
                                     .minimumInteractiveComponentSize()
-                                    .testTag("copy_lesson_code_button")
+                                    .testTag("copy_guide_text_button")
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.ContentCopy,
-                                    contentDescription = stringResource(R.string.cd_copy_code),
+                                    contentDescription = stringResource(R.string.cd_copy_text),
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(Modifier.width(6.dp))
-                                Text("نسخ الكود", style = MaterialTheme.typography.labelSmall)
+                                Text("نسخ", style = MaterialTheme.typography.labelSmall)
                             }
                         }
 
@@ -633,14 +675,12 @@ fun LessonPlayerScreen(
                                 .fillMaxWidth()
                                 .background(DarkPlayerSurface, RoundedCornerShape(10.dp))
                                 .padding(12.dp)
-                                .horizontalScroll(rememberScrollState())
                         ) {
                             Text(
-                                text = lesson.codeSnippet,
-                                fontFamily = JetBrainsMonoFontFamily,
-                                fontSize = 12.sp,
-                                lineHeight = 18.sp,
-                                color = EmeraldBright
+                                text = lesson.readyGuideText,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = EmeraldBright,
+                                softWrap = true
                             )
                         }
                     }
@@ -648,6 +688,11 @@ fun LessonPlayerScreen(
             }
         }
     }
+}
+
+private fun copyPlainText(context: Context, label: String, text: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    clipboard.setPrimaryClip(ClipData.newPlainText(label, text))
 }
 
 private fun formatDurationMs(ms: Long): String {
